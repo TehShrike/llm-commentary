@@ -1,6 +1,6 @@
 # LLM Commentary
 
-A non-chat way to get LLM to respond to whatever you're writing in the sidebar, as you're typing.
+A non-chat way to get LLM to respond in the sidebar to whatever you're writing.
 
 I tried to keep it from updating if you're in the middle of typing something, with middling success.
 

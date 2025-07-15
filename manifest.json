@@ -3,7 +3,7 @@
 	"name": "LLM Commentary",
 	"version": "1.2.0",
 	"minAppVersion": "0.15.0",
-	"description": "You don't chat with it, it just comments on your notes.",
+	"description": "A non-chat way to get LLM to respond in the sidebar to whatever you're writing.",
 	"author": "TehShrike",
 	"authorUrl": "https://github.com/TehShrike",
 	"isDesktopOnly": false
