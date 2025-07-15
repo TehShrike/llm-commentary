@@ -5,6 +5,7 @@ const VIEW_TYPE_LLM_COMMENTARY = 'llm-commentary-view'
 type LlmCommentarySettings = {
 	claudeApiKey: string
 	prompt: string
+	model: string
 }
 
 const DEFAULT_SETTINGS: LlmCommentarySettings = {
@@ -26,7 +27,8 @@ DO NOT give generic suggestions like "try giving a specific example..."
 Do not say what you are doing, only provide the suggestions.
 
 Do not use lists, respond in paragraphs.
-`
+`,
+	model: 'claude-sonnet-4-20250514'
 }
 
 function assert(condition: any, message = 'Assertion failed'): asserts condition {
@@ -145,7 +147,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 					'anthropic-version': '2023-06-01'
 				},
 				body: JSON.stringify({
-					model: 'claude-sonnet-4-20250514',
+					model: this.settings.model,
 					max_tokens: 1000,
 					messages: [
 						{
@@ -214,7 +216,7 @@ class LlmCommentarySettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Claude API Key')
-			.setDesc('You can get one from https://console.anthropic.com/')
+			.setDesc('You can get one from https://console.anthropic.com/settings/keys')
 			.addText(text => text
 				.setValue(this.plugin.settings.claudeApiKey)
 				.onChange(async (value) => {
@@ -224,7 +226,6 @@ class LlmCommentarySettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Prompt')
-			.setDesc('The prompt to send to Claude for commentary')
 			.addTextArea(text => text
 				.setValue(this.plugin.settings.prompt)
 				.onChange(async (value) => {
@@ -232,5 +233,15 @@ class LlmCommentarySettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings()
 				})
 			)
+
+		new Setting(containerEl)
+			.setName('Model')
+			.setDesc('You can find a list of models at https://docs.anthropic.com/en/docs/about-claude/models/overview')
+			.addText(text => text
+				.setValue(this.plugin.settings.model)
+				.onChange(async (value) => {
+					this.plugin.settings.model = value
+					await this.plugin.saveSettings()
+				}))
 	}
 }
