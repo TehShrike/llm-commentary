@@ -1,12 +1,13 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "llm-commentary",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "You don't chat with it, it just comments on your notes.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"release": "gh release create $(node -p \"require('./package.json').version\") --title \"$(node -p \"require('./package.json').version\")\" --generate-notes --attach manifest.json --attach main.js --attach styles.css"
 	},
 	"keywords": [],
 	"author": "",
