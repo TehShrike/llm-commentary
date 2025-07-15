@@ -121,7 +121,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 		workspace.revealLeaf(leaf)
 
 		if (!this.settings.claudeApiKey) {
-			leaf.view.display('No API key set. Please set one in the settings.')
+			leaf.view.display('No API key set. Please set one in the settings.  Get one from https://console.anthropic.com/settings/keys')
 		}
 
 		return leaf.view
