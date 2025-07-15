@@ -215,7 +215,7 @@ class LlmCommentarySettingTab extends PluginSettingTab {
 		containerEl.empty()
 
 		new Setting(containerEl)
-			.setName('Claude API Key')
+			.setName('Claude API key')
 			.setDesc('You can get one from https://console.anthropic.com/settings/keys')
 			.addText(text => text
 				.setValue(this.plugin.settings.claudeApiKey)
