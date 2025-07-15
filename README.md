@@ -6,6 +6,8 @@ I tried to keep it from updating if you're in the middle of typing something, wi
 
 The default prompt is a generic "suggest things that could be added to this blog post" thing I threw together testing.
 
+To open the LLM commentary in the sideview, click the little robot icon in the ribbon or type "LLM" in the commande palette to choose the "Open LLM commentary view".
+
 ![Screenshot](screenshot%202025-07-15%2016.06.53.png)
 
 Right now it only uses Anthropic's API.  Get an API key [here](https://console.anthropic.com/settings/keys) and if you want to try different models you can check out the list of options [here](https://docs.anthropic.com/en/docs/about-claude/models/overview).
