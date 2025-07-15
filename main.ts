@@ -60,13 +60,13 @@ export default class LlmCommentaryPlugin extends Plugin {
 			(leaf) => new LlmCommentaryView(leaf)
 		)
 
-		this.addRibbonIcon('pencil', 'Open LLM Commentary View', () => {
+		this.addRibbonIcon('bot', 'Open LLM commentary view', () => {
 			this.getCommentary()
 		})
 
 		this.addCommand({
 			id: 'open-llm-commentary-view',
-			name: 'Open LLM Commentary View',
+			name: 'Open LLM commentary view',
 			callback: () => {
 				this.getCommentary()
 			}
