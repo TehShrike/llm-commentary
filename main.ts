@@ -1,134 +1,236 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { ItemView, MarkdownView, Plugin, PluginSettingTab, requestUrl, Setting, WorkspaceLeaf, MarkdownRenderer } from 'obsidian'
 
-// Remember to rename these classes and interfaces!
+const VIEW_TYPE_LLM_COMMENTARY = 'llm-commentary-view'
 
-interface MyPluginSettings {
-	mySetting: string;
+type LlmCommentarySettings = {
+	claudeApiKey: string
+	prompt: string
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: LlmCommentarySettings = {
+	claudeApiKey: '',
+	prompt: `You are Scott Alexander, the popular internet writer.  You are helping someone write an insightful blog post.  Your output should be a list of thoughts about content could be added to expand the post.
+
+Do not comment on style or grammar issues, only provide ideas that could improve the post.
+
+Do not suggest expanding on the current content of the post, come up with new ideas that would be a good direction to take the piece.
+
+Do not give more than 3 suggestions.
+
+Phrase the suggestions to be brief, eliminate any words in the suggestion that get in the way of the core idea.
+
+Think about a bunch of different suggestions that would be great improvements to the post, and then pick the ones that are most concrete.
+
+DO NOT give generic suggestions like "try giving a specific example..."
+
+Do not say what you are doing, only provide the suggestions.
+
+Do not use lists, respond in paragraphs.
+`
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+function assert(condition: any, message = 'Assertion failed'): asserts condition {
+	if (!condition) {
+		throw new Error(message)
+	}
+}
+
+type ClaudeResponse = {
+	id: string
+	content: {
+		type: 'text'
+		text: string
+	}[]
+}
+
+const waiting_response = 'It looks like the user is still in the middle of a thought.'
+
+export default class LlmCommentaryPlugin extends Plugin {
+	settings: LlmCommentarySettings
+	private last_api_call_timestamp = 0
 
 	async onload() {
-		await this.loadSettings();
+		await this.loadSettings()
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		this.addSettingTab(new LlmCommentarySettingTab(this.app, this))
+		this.registerView(
+			VIEW_TYPE_LLM_COMMENTARY,
+			(leaf) => new LlmCommentaryView(leaf)
+		)
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		this.addRibbonIcon('pencil', 'Open LLM Commentary View', () => {
+			this.getCommentary()
+		})
 
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'open-llm-commentary-view',
+			name: 'Open LLM Commentary View',
 			callback: () => {
-				new SampleModal(this.app).open();
+				this.getCommentary()
 			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
+		})
+
+		// Listen for editor changes to automatically update commentary
+		this.registerEvent(
+			this.app.workspace.on('editor-change', (editor, view) => {
+				if (view instanceof MarkdownView) {
+					const now = Date.now()
+					if (now - this.last_api_call_timestamp >= 5000) {
+						this.last_api_call_timestamp = now
+						this.getCommentary()
 					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
 				}
-			}
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+			})
+		)
 	}
 
-	onunload() {
-
+	async onunload() {
+		// Clean up any views when plugin is disabled
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		await this.saveData(this.settings)
+	}
+
+	async activateView() {
+		const { workspace } = this.app
+
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_LLM_COMMENTARY)
+
+		let leaf = leaves.length > 0 ? leaves[0] : null
+
+		if (leaves.length === 0) {
+			leaf = workspace.getRightLeaf(false)
+			if (leaf) {
+				await leaf.setViewState({
+					type: VIEW_TYPE_LLM_COMMENTARY,
+					active: true,
+				})
+			}
+		}
+
+		assert(leaf)
+		assert(leaf.view instanceof LlmCommentaryView)
+
+		workspace.revealLeaf(leaf)
+
+		if (!this.settings.claudeApiKey) {
+			leaf.view.display('No API key set. Please set one in the settings.')
+		}
+
+		return leaf.view
+	}
+
+	async getCommentary() {
+		const view = await this.activateView()
+
+		// Get the active markdown view to extract content
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
+		if (!activeView) {
+			view.display('No active markdown view found.')
+			return
+		}
+
+		try {
+			const response = await requestUrl({
+				url: 'https://api.anthropic.com/v1/messages',
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': this.settings.claudeApiKey,
+					'anthropic-version': '2023-06-01'
+				},
+				body: JSON.stringify({
+					model: 'claude-sonnet-4-20250514',
+					max_tokens: 1000,
+					messages: [
+						{
+							role: 'user',
+							content: activeView.editor.getValue()
+						}
+					],
+					system: this.settings.prompt + `\n\nIf there are any unfinished sentences (sentences that do not have a period or other sentence-ending punctuation) anywhere in the text, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}"`
+				})
+			})
+
+			const json = response.json as ClaudeResponse
+
+			const claude_response = json.content[0].text
+
+			if (claude_response !== waiting_response) {
+				view.display(claude_response)
+			}
+		} catch (error: unknown) {
+			assert(error instanceof Error)
+			view.display(error.message)
+		}
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
+class LlmCommentaryView extends ItemView {
+	constructor(leaf: WorkspaceLeaf) {
+		super(leaf)
 	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
+	getViewType() {
+		return VIEW_TYPE_LLM_COMMENTARY
 	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	getDisplayText() {
+		return 'LLM Commentary'
+	}
+
+	async onOpen() {
+		this.containerEl.empty()
+	}
+
+	display(markdown: string) {	
+		this.containerEl.empty()
+		const wrapper = this.containerEl.createDiv({ cls: 'wrapper' })
+		MarkdownRenderer.render(this.app, markdown, wrapper, '', this)
+	}
+
+	async onClose() {
+		// Nothing to clean up
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class LlmCommentarySettingTab extends PluginSettingTab {
+	plugin: LlmCommentaryPlugin
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
+	constructor(app: any, plugin: LlmCommentaryPlugin) {
+		super(app, plugin)
+		this.plugin = plugin
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		const { containerEl } = this
 
-		containerEl.empty();
+		containerEl.empty()
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Claude API Key')
+			.setDesc('You can get one from https://console.anthropic.com/')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setValue(this.plugin.settings.claudeApiKey)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
+					this.plugin.settings.claudeApiKey = value
+					await this.plugin.saveSettings()
+				}))
+
+		new Setting(containerEl)
+			.setName('Prompt')
+			.setDesc('The prompt to send to Claude for commentary')
+			.addTextArea(text => text
+				.setValue(this.plugin.settings.prompt)
+				.onChange(async (value) => {
+					this.plugin.settings.prompt = value
+					await this.plugin.saveSettings()
+				})
+			)
 	}
 }
