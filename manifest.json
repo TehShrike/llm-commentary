@@ -1,7 +1,7 @@
 {
 	"id": "llm-commentary",
 	"name": "LLM Commentary",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"minAppVersion": "0.15.0",
 	"description": "You don't chat with it, it just comments on your notes.",
 	"author": "TehShrike",
