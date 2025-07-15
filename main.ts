@@ -130,9 +130,8 @@ export default class LlmCommentaryPlugin extends Plugin {
 	async getCommentary() {
 		const view = await this.activateView()
 
-		// Get the active markdown view to extract content
-		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
-		if (!activeView) {
+		const editor = this.app.workspace.activeEditor?.editor
+		if (!editor) {
 			view.display('No active markdown view found.')
 			return
 		}
@@ -152,7 +151,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 					messages: [
 						{
 							role: 'user',
-							content: activeView.editor.getValue()
+							content: editor.getValue()
 						}
 					],
 					system: this.settings.prompt + `\n\nIf there are any unfinished sentences (sentences that do not have a period or other sentence-ending punctuation) anywhere in the text, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}"`
