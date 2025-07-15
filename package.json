@@ -7,7 +7,7 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"release": "gh release create $(node -p \"require('./package.json').version\") --title \"$(node -p \"require('./package.json').version\")\" --generate-notes --attach manifest.json --attach main.js --attach styles.css"
+		"release": "gh release create $(node -p \"require('./package.json').version\") --title \"$(node -p \"require('./package.json').version\")\" manifest.json main.js styles.css"
 	},
 	"keywords": [],
 	"author": "",
