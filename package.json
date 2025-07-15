@@ -1,6 +1,6 @@
 {
 	"name": "llm-commentary",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "You don't chat with it, it just comments on your notes.",
 	"main": "main.js",
 	"scripts": {
