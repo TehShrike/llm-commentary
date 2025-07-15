@@ -1,7 +1,7 @@
 {
 	"id": "llm-commentary",
 	"name": "LLM Commentary",
-	"version": "1.2.1",
+	"version": "1.3.0",
 	"minAppVersion": "0.15.0",
 	"description": "A non-chat way to get LLM to respond in the sidebar to whatever you're writing.",
 	"author": "TehShrike",
