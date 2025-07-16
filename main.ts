@@ -45,7 +45,7 @@ type ClaudeResponse = {
 	}[]
 }
 
-const waiting_response = 'It looks like the user is still in the middle of a thought.'
+const waiting_response = 'It looks like the user is still in the middle of a thought or has an unfinished sentence.'
 
 export default class LlmCommentaryPlugin extends Plugin {
 	settings: LlmCommentarySettings
@@ -77,7 +77,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 			this.app.workspace.on('editor-change', (editor, view) => {
 				if (view instanceof MarkdownView) {
 					const now = Date.now()
-					if (now - this.last_api_call_timestamp >= 5000) {
+					if (now - this.last_api_call_timestamp >= 10000) {
 						this.last_api_call_timestamp = now
 						this.getCommentary()
 					}
@@ -154,7 +154,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 							content: editor.getValue()
 						}
 					],
-					system: this.settings.prompt + `\n\nIf there are any unfinished sentences (sentences that do not have a period or other sentence-ending punctuation) anywhere in the text, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}"`
+					system: `If the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}", even if it looks intentional.\n\n${this.settings.prompt}`
 				})
 			})
 
