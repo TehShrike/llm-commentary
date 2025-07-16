@@ -72,7 +72,6 @@ export default class LlmCommentaryPlugin extends Plugin {
 			}
 		})
 
-		// Listen for editor changes to automatically update commentary
 		this.registerEvent(
 			this.app.workspace.on('editor-change', (editor, view) => {
 				if (view instanceof MarkdownView) {
