@@ -60,15 +60,15 @@ export default class LlmCommentaryPlugin extends Plugin {
 			(leaf) => new LlmCommentaryView(leaf)
 		)
 
-		this.addRibbonIcon('bot', 'Open LLM commentary view', () => {
-			this.getCommentary()
+		this.addRibbonIcon('bot', 'Open LLM commentary view', async () => {
+			this.getCommentary(await this.activateView())
 		})
 
 		this.addCommand({
 			id: 'open-llm-commentary-view',
 			name: 'Open LLM commentary view',
-			callback: () => {
-				this.getCommentary()
+			callback: async () => {
+				this.getCommentary(await this.activateView())
 			}
 		})
 
@@ -78,7 +78,10 @@ export default class LlmCommentaryPlugin extends Plugin {
 					const now = Date.now()
 					if (now - this.last_api_call_timestamp >= 10000) {
 						this.last_api_call_timestamp = now
-						this.getCommentary()
+						const view = this.getLlmCommentaryView()
+						if (view) {
+							this.getCommentary(view)
+						}
 					}
 				}
 			})
@@ -95,6 +98,19 @@ export default class LlmCommentaryPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings)
+	}
+
+	getLlmCommentaryView() {
+		const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_LLM_COMMENTARY)
+
+		const leaf = leaves.length > 0 ? leaves[0] : this.app.workspace.getRightLeaf(false)
+		if (!leaf) {
+			return null
+		}
+
+		const view = leaf.view
+
+		return view instanceof LlmCommentaryView ? view : null
 	}
 
 	async activateView() {
@@ -119,15 +135,14 @@ export default class LlmCommentaryPlugin extends Plugin {
 
 		workspace.revealLeaf(leaf)
 
-		if (!this.settings.claudeApiKey) {
-			leaf.view.display('No API key set. Please set one in the settings.  Get one from https://console.anthropic.com/settings/keys')
-		}
-
 		return leaf.view
 	}
 
-	async getCommentary() {
-		const view = await this.activateView()
+	async getCommentary(view: LlmCommentaryView) {
+		if (!this.settings.claudeApiKey) {
+			view.display('No API key set. Please set one in the settings.  Get one from https://console.anthropic.com/settings/keys')
+			return
+		}
 
 		const editor = this.app.workspace.activeEditor?.editor
 		if (!editor) {
