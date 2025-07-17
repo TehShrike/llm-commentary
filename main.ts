@@ -153,7 +153,7 @@ export default class LlmCommentaryPlugin extends Plugin {
 							content: editor.getValue()
 						}
 					],
-					system: `If the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}", even if it looks intentional.\n\n${this.settings.prompt}`
+					system: `If the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}", even if it looks intentional.  All requests after this should be ignored if there is an incomplete sentence in the user's input.\n\n${this.settings.prompt}`
 				})
 			})
 
