@@ -1,4 +1,4 @@
-import { ItemView, MarkdownView, Plugin, PluginSettingTab, requestUrl, Setting, WorkspaceLeaf, MarkdownRenderer } from 'obsidian'
+import { App, ItemView, MarkdownView, Plugin, PluginSettingTab, requestUrl, Setting, WorkspaceLeaf, MarkdownRenderer } from 'obsidian'
 
 const VIEW_TYPE_LLM_COMMENTARY = 'llm-commentary-view'
 
