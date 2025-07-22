@@ -217,7 +217,7 @@ class LlmCommentaryView extends ItemView {
 class LlmCommentarySettingTab extends PluginSettingTab {
 	plugin: LlmCommentaryPlugin
 
-	constructor(app: any, plugin: LlmCommentaryPlugin) {
+	constructor(app: App, plugin: LlmCommentaryPlugin) {
 		super(app, plugin)
 		this.plugin = plugin
 	}
