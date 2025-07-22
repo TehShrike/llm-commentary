@@ -1,4 +1,7 @@
 .wrapper {
 	padding: 16px;
 	overflow-y: auto;
+
+	user-select: text;
+	-webkit-user-select: text;
 }
