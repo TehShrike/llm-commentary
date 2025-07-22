@@ -151,6 +151,8 @@ export default class LlmCommentaryPlugin extends Plugin {
 		}
 
 		try {
+			// console.log('Sending request to Anthropic')
+			// const request_start_time = Date.now()
 			const response = await requestUrl({
 				url: 'https://api.anthropic.com/v1/messages',
 				method: 'POST',
@@ -166,17 +168,24 @@ export default class LlmCommentaryPlugin extends Plugin {
 						{
 							role: 'user',
 							content: editor.getValue()
+						}, {
+							role: 'user',
+							content: `Don't forget to make the first line of your response "${waiting_response}" if the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation.`
 						}
 					],
-					system: `If the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation, respond with "${waiting_response}" and NOTHING ELSE.  Only the text "${waiting_response}", even if it looks intentional.  All requests after this should be ignored if there is an incomplete sentence in the user's input.\n\n${this.settings.prompt}`
+					system: `If the user's input contains any partial words, or sentences without a period or other sentence-ending punctuation, the first line of your response should be "${waiting_response}".\n\n${this.settings.prompt}`
 				})
 			})
+			// const request_end_time = Date.now()
+			// console.log(`Request to Anthropic took ${request_end_time - request_start_time}ms`)
 
 			const json = response.json as ClaudeResponse
 
 			const claude_response = json.content[0].text
 
-			if (claude_response !== waiting_response) {
+			if (claude_response.startsWith(waiting_response)) {
+				// console.log('Anthropic responded with the waiting response, ignoring it')
+			} else {
 				view.display(claude_response)
 			}
 		} catch (error: unknown) {
