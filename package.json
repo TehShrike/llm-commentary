@@ -1,6 +1,6 @@
 {
 	"name": "llm-commentary",
-	"version": "1.4.1",
+	"version": "1.5.0",
 	"description": "A non-chat way to get LLM to respond in the sidebar to whatever you're writing.",
 	"main": "main.js",
 	"scripts": {
